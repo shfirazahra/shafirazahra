@@ -1,1 +1,1637 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ═══════════════════════════════════════════
+   ROOT VARIABLES — Tema default Pink Rose
+═══════════════════════════════════════════ */
+:root {
+    --pink-soft: #fffafa;
+    --pink-bg: #fdf2f5;
+    --rose-gold: #e5a4b4;
+    --text-color: #5d4037;
+    --white: #FEF6F8;
+    --env-color: #FFE5ED;
+    --env-dark: #FFE5ED;
+    --theme-transition: background-color 0.4s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+        /* Background dipindah ke html agar canvas fixed z-index:-1 tetap terlihat di atas bg */
+        html { background-color: var(--pink-soft); }
+        body { font-family: 'Poppins', sans-serif; background-color: transparent; color: var(--text-color); scroll-behavior: smooth; overflow-x: hidden; position: relative; }
+        
+        /* Mencegah scroll saat amplop belum dibuka */
+        body.no-scroll { overflow: hidden; height: 100vh; width: 100vw; position: fixed; }
+
+   /* --- STYLES AMPLOP VINTAGE (FIXED MOBILE) --- */
+        .envelope-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #FEF6F8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 1s ease-in-out, visibility 1s;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 300px;
+            height: 200px;
+            touch-action: manipulation; /* Hilangkan delay 300ms tap di HP */
+            -webkit-tap-highlight-color: transparent; /* Hilangkan highlight biru saat tap */
+        }
+
+        .envelope {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: #FFE5ED; /* Hardcoded — jangan ikut tema */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            transition: 0.4s;
+        }
+
+    
+.envelope::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    /* Ganti var(--env-dark) menjadi var(--env-color) agar sama dengan bawah */
+    border-top: 110px solid #FFE5ED; /* Hardcoded — jangan ikut tema */
+    border-left: 150px solid transparent;
+    border-right: 150px solid transparent;
+    transform-origin: top;
+    transition: transform 0.7s ease-in-out 0.2s;
+}
+
+   /* Badan Amplop (Samping & Bawah) */
+.envelope::after {
+    content: "";
+    position: absolute;
+    z-index: 3;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-bottom: 100px solid #FFE5ED;
+    border-left: 150px solid #FFE5ED;
+    border-right: 150px solid #FFE5ED;
+}
+        .wax-seal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Benar-benar di tengah */
+            width: 40px;
+            height: 40px;
+            background: #d46a81;
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: 0.5s;
+        }
+
+        .open-me-text {
+            position: absolute;
+            top: -50px;
+            width: 100%;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 22px;
+            color: #e5a4b4 !important; /* Hardcoded pink — jangan ikut tema */
+        }
+
+        .letter {
+            position: absolute;
+            bottom: 10px;
+            left: 25px;
+            width: 250px;
+            height: 170px;
+            background: white;
+            z-index: 2;
+            transition: transform 0.9s ease-in-out 0.8s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+    /* --- DARK MODE SETTINGS (HANYA INI YANG DIGANTI) --- */
+/* Dark mode — bg ikut tema via JS (html.style.backgroundColor),
+   fallback ke #2d1b1e jika tidak ada tema */
+/* html bg di dark mode diset via JS sesuai tema aktif */
+body.dark-mode {
+    background-color: transparent !important;
+    color: #fce4ec !important;
+}
+body.dark-mode section, body.dark-mode .hero {
+    background: transparent !important;
+}
+/* Dark mode cards — diatur di blok utama di bawah, ikut warna tema */
+body.dark-mode nav { background: color-mix(in srgb, var(--rose-gold) 8%, rgba(10,10,10,0.92)) !important; backdrop-filter: blur(10px); color: #fce4ec !important; }
+body.dark-mode .envelope-overlay { background-color: #2d1b1e !important; }
+/* envelope warna di dark mode sudah diatur di blok amplop di bawah */
+body.dark-mode p, body.dark-mode h2, body.dark-mode b, body.dark-mode td { color: #fce4ec !important; }
+/* Mengubah warna semua kartu (Card) agar tidak putih lagi */
+body.dark-mode .card,
+body.dark-mode .journey-item,
+body.dark-mode .sidebar {
+    background-color: color-mix(in srgb, var(--rose-gold) 12%, #181818) !important;
+    color: #fce4ec !important;
+    border: 1px solid color-mix(in srgb, var(--rose-gold) 40%, transparent) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+}
+
+/* Fix: teks link di sidebar harus tetap terang di dark mode */
+body.dark-mode .sidebar ul li a {
+    color: #fce4ec !important;
+}
+body.dark-mode .sidebar ul li {
+    border-bottom-color: rgba(252, 228, 236, 0.15) !important;
+}
+
+/* Mengubah warna tabel sertifikat agar senada */
+body.dark-mode .cert-table {
+    background-color: color-mix(in srgb, var(--rose-gold) 12%, #181818) !important;
+    color: #fce4ec !important;
+}
+
+body.dark-mode .cert-table td {
+    border-bottom: 1px solid color-mix(in srgb, var(--rose-gold) 30%, transparent) !important;
+    color: #fce4ec !important;
+}
+
+/* Mengubah warna Footer agar tidak terlalu kontras */
+body.dark-mode footer {
+    background-color: color-mix(in srgb, var(--rose-gold) 10%, #0e0e0e) !important;
+    border-top: 1px solid color-mix(in srgb, var(--rose-gold) 30%, transparent);
+}
+
+/* Footer selalu gelap — teks harus selalu kontras */
+footer h2 {
+    color: #fff !important;
+    text-shadow: 0 2px 12px color-mix(in srgb, var(--rose-gold) 40%, transparent);
+}
+footer p {
+    color: rgba(255,255,255,0.65) !important;
+}
+footer small, footer .copyright {
+    color: rgba(255,255,255,0.4) !important;
+    font-size: 12px;
+}
+/* Separator antara link footer */
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 0;
+    margin: 24px 0 16px;
+}
+.footer-links a {
+    position: relative;
+    padding: 4px 16px;
+}
+.footer-links a:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 14px;
+    width: 1px;
+    background: rgba(255,255,255,0.2);
+}
+/* Input form di footer — pastikan kontras */
+.contact-form input,
+.contact-form textarea {
+    border-color: rgba(255,255,255,0.15);
+}
+.contact-form input:focus,
+.contact-form textarea:focus {
+    border-color: var(--rose-gold);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--rose-gold) 20%, transparent);
+}
+
+/* Pastikan semua teks di dalam mode dark berwarna terang */
+body.dark-mode p, 
+body.dark-mode h2, 
+body.dark-mode b,
+body.dark-mode span {
+    color: #fce4ec !important;
+}
+
+        .letter img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid var(--pink-bg); }
+        .letter p { font-size: 12px; font-family: 'Playfair Display', serif; color: #888; }
+
+        .envelope-overlay.open .envelope::before { transform: rotateX(180deg); z-index: 1; }
+        .envelope-overlay.open .letter { transform: translateY(-130px); }
+        .envelope-overlay.open .wax-seal { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+        .envelope-overlay.fade-out { opacity: 0; visibility: hidden; }
+
+        /* Responisve Envelope */
+        @media (max-width: 400px) {
+            .envelope-wrapper { transform: scale(0.85); } /* Skala hanya untuk HP kecil agar tidak potong */
+        }
+
+        /* --- CSS ORIGINAL --- */
+        #dandelion-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .hamburger { cursor: pointer; z-index: 1001; padding: 10px; }
+        .hamburger div { width: 25px; height: 3px; background: var(--rose-gold); margin: 5px; transition: 0.3s; border-radius: 3px; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 250px; height: 100%; background: var(--white); transition: 0.4s ease-in-out; z-index: 999; padding-top: 100px; box-shadow: 2px 0 15px rgba(0,0,0,0.05); }
+        .sidebar.active { left: 0; }
+        .sidebar ul { list-style: none; padding: 0 30px; }
+        .sidebar ul li { margin: 25px 0; border-bottom: 1px solid var(--pink-bg); padding-bottom: 10px; }
+        .sidebar ul li a { font-weight: 600; font-size: 16px; }
+        .hero { display: flex; flex-direction: column; align-items: center; padding: 80px 10%; text-align: center; background: linear-gradient(135deg, var(--pink-bg) 0%, var(--pink-soft) 100%); transition: var(--theme-transition, background 0.4s); }
+        .profile-img-hero { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 6px solid white; box-shadow: 0 10px 25px rgba(229,164,180,0.25); margin-bottom: 25px; transition: 0.5s; }
+        .profile-img-hero:hover { transform: scale(1.05) rotate(5deg); }
+        .hero h1 span { color: var(--rose-gold); border-bottom: 2px solid var(--rose-gold); }
+        .section { padding: 80px 8%; text-align: center; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 40px; color: var(--text-color); }
+       /* Container utama skill */
+.skill-item {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.5); /* Semi transparan agar cantik */
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.skill-item:hover {
+    transform: translateX(10px);
+    background: white;
+}
+
+/* Pengaturan baris nama dan badge */
+.skill-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.skill-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-color);
+}
+
+/* Styling untuk Badge */
+.skill-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.skill-badge.advanced {
+    background-color: #e5a4b4; /* Rose Gold */
+    color: white;
+}
+
+.skill-badge.intermediate {
+    background-color: #fce4ec; /* Pink sangat muda */
+    color: #e5a4b4;
+    border: 1px solid #e5a4b4;
+}
+
+/* Styling untuk Bintang */
+.skill-stars {
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: #ffb400; /* Warna emas bintang */
+}
+
+/* Penyesuaian Dark Mode */
+body.dark-mode .skill-item {
+    background: color-mix(in srgb, var(--rose-gold) 12%, rgba(10,10,10,0.6));
+}
+body.dark-mode .skill-name {
+    color: #fce4ec !important;
+}
+        .journey-container { max-width: 600px; margin: 0 auto; border-left: 2px dashed var(--rose-gold); padding-left: 30px; position: relative; }
+        .journey-item { position: relative; margin-bottom: 30px; text-align: left; cursor: pointer; padding: 5px 10px; border-radius: 12px; transition: 0.3s; }
+        .journey-item:hover { background: rgba(229, 164, 180, 0.05); }
+        .journey-item::before { content: '✿'; position: absolute; left: -30px; transform: translateX(-50%); top: 5px; font-size: 18px; z-index: 2;}
+        .journey-item .year { font-weight: 600; color: var(--rose-gold); margin-bottom: 2px; display: block; }
+        .journey-item h3 { font-size: 17px; margin-bottom: 2px; }
+        .journey-item .short-desc { margin: 0; font-size: 14px; }
+        .journey-detail { max-height: 0; overflow: hidden; transition: all 0.5s ease-in-out; opacity: 0; }
+        .journey-item.active .journey-detail { max-height: 1000px; opacity: 1; padding-top: 15px; padding-bottom: 10px; }
+        .journey-detail img { width: 100%; max-width: 400px; border-radius: 15px; margin-top: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: block; }
+        .journey-detail .full-desc { font-size: 13px; margin-top: 8px; line-height: 1.6; color: #777; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+     /* 1. Atur dasar kartu agar siap bergerak */
+/* 1. Perbaikan pada kartu utama */
+.card { 
+    background: white; 
+    padding: 40px 25px 25px 25px; 
+    border-radius: 20px; 
+    border: 1px solid #fce4ec; 
+    text-align: left; 
+    height: 100%; 
+    position: relative; 
+    
+    /* Mencegah efek 'greges' dengan backface-visibility */
+    backface-visibility: hidden;
+    transform: translateZ(0); 
+    
+    /* Transisi dibuat sedikit lebih lambat agar elegan */
+    transition: transform 0.4s ease-out, box-shadow 0.4s ease-out, border-color 0.4s ease-out;
+}
+
+/* 2. Solusi utama: Gunakan container atau a untuk trigger hover */
+/* Ini agar area hover tetap stabil meski kartu sedang naik-turun */
+.grid a:hover .card,
+.card:hover { 
+    transform: translateY(-12px) !important;
+    box-shadow: 0 20px 40px rgba(229, 164, 180, 0.25) !important;
+    border-color: var(--rose-gold) !important;
+}
+
+/* 3. Pastikan tidak ada overflow yang memotong bayangan */
+.grid {
+    padding-top: 20px; /* Kasih ruang di atas supaya pas naik tidak kepotong */
+}
+        .card h3 { color: var(--rose-gold); margin-bottom: 10px; font-size: 18px; }
+        .cert-table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; font-size: 13px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); margin-top: 20px; }
+        .cert-table th { background: var(--rose-gold); color: white; padding: 12px; }
+        .cert-table td { padding: 12px; border-bottom: 1px solid var(--pink-bg); text-align: left; }
+        .cert-table tr:hover { background-color: var(--pink-soft); cursor: pointer; }
+        .cert-category-header td { background: var(--pink-bg) !important; color: var(--text-color) !important; pointer-events: none; }
+        .cert-category-header:hover { background: var(--pink-bg) !important; }
+        footer { padding: 60px; background: color-mix(in srgb, var(--rose-gold) 15%, #1a1a1a); color: white; text-align: center; }
+        .footer-links a { display: inline-block; color: rgba(255,255,255,0.85); margin: 0 15px; font-size: 16px; font-weight: 600; }
+/* --- Tambahan untuk Partikel & Dark Mode Burgundy --- */
+body.dark-mode { 
+    background-color: transparent !important; 
+    color: #fce4ec !important; 
+}
+body.dark-mode section, body.dark-mode .hero { 
+    background: transparent !important; 
+}
+/* Dark mode cards — diatur di blok di atas, ikut warna tema */
+body.dark-mode .envelope-overlay { background-color: #2d1b1e !important; }
+
+/* Dandelion canvas — always behind content tapi di depan body background */
+#dandelion-canvas { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    pointer-events: none; 
+    z-index: -1;
+}
+
+
+.tech-stack {
+    margin-top: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--rose-gold); /* Menggunakan warna rose-gold agar konsisten */
+    background: var(--pink-bg);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+}
+
+/* Penyesuaian untuk Dark Mode */
+body.dark-mode .tech-stack {
+    background: rgba(229, 164, 180, 0.2);
+    color: #fce4ec;
+}
+
+        /* Styling Tombol Download CV */
+.btn-download {
+    display: inline-block;
+    padding: 12px 28px;
+    background-color: var(--rose-gold);
+    color: white !important;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(229, 164, 180, 0.4);
+    border: none;
+    text-decoration: none;
+}
+
+.btn-download:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(229, 164, 180, 0.6);
+    background-color: #d46a81; /* Warna pink agak gelap saat hover */
+}
+
+/* Penyesuaian Dark Mode agar tombol tetap terlihat jelas */
+body.dark-mode .btn-download {
+    background-color: var(--rose-gold);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+/* Styling Gateway di Hero */
+.gateway-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-width: 800px;
+    margin-top: 40px;
+    width: 100%;
+}
+
+.gateway-card {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--rose-gold);
+    padding: 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.gateway-card:hover {
+    transform: translateY(-10px);
+    background: var(--rose-gold);
+    color: white;
+}
+
+.gateway-card .icon { font-size: 2rem; margin-bottom: 10px; }
+.gateway-card h3 { font-size: 16px; margin-bottom: 5px; font-family: 'Playfair Display', serif; }
+.gateway-card p { font-size: 11px; opacity: 0.8; }
+
+/* Sistem Sembunyi Section */
+.section-hidden { display: none !important; }
+
+@media (max-width: 600px) {
+    .gateway-container { grid-template-columns: 1fr; }
+}
+
+/* Dark Mode untuk Gateway */
+body.dark-mode .gateway-card {
+    background: color-mix(in srgb, var(--rose-gold) 12%, rgba(10,10,10,0.85));
+    color: #fce4ec;
+    border-color: color-mix(in srgb, var(--rose-gold) 50%, transparent);
+}
+/* Memaksa baris tabel hilang saat difilter */
+tr.type-pro[style*="display: none"], 
+tr.type-creative[style*="display: none"],
+tr.type-personal[style*="display: none"] {
+    display: none !important;
+}
+
+/* Sembunyikan semua section secara default */
+.section-hidden { 
+    display: none !important; 
+}
+
+/* Pastikan Lobby (Hero) tetap muncul di awal */
+.hero:not(.section-hidden) {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Memperbaiki tampilan tabel saat difilter */
+tbody tr {
+    transition: all 0.3s ease;
+}
+
+/* Tambahkan ini agar saat user di dalam kategori, dia tahu cara balik */
+#backToLobby {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+#backToLobby:hover {
+    transform: scale(1.1);
+}
+/* --- TAMBAHKAN DI PALING BAWAH --- */
+
+/* Wadah ikon di pojok kanan atas */
+.card-actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 12px;
+    z-index: 10; /* Supaya selalu di atas kartu */
+}
+
+/* Gaya ikon (Emoji/Simbol) */
+.card-actions a {
+    font-size: 1.2rem;
+    text-decoration: none;
+    transition: transform 0.2s ease, opacity 0.2s;
+    opacity: 0.6; /* Efek transparan saat diam */
+}
+
+.card-actions a:hover {
+    transform: scale(1.3); /* Membesar saat disentuh */
+    opacity: 1; /* Terang saat disentuh */
+}
+
+/* Penyesuaian ikon di Mode Gelap */
+body.dark-mode .card-actions a {
+    filter: brightness(1.5);
+}
+/* Baris atas kartu: judul kiri, ikon kanan sejajar */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 14px; /* sesuaikan kalau perlu */
+}
+
+/* Gambar screenshot di tengah kartu */
+.card-preview {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: block;
+    background: linear-gradient(90deg, var(--pink-bg) 25%, var(--pink-soft) 50%, var(--pink-bg) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+}
+.card-preview.loaded {
+    animation: none;
+    background: none;
+}
+
+.journey-detail img {
+    background: linear-gradient(90deg, var(--pink-bg) 25%, var(--pink-soft) 50%, var(--pink-bg) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    min-height: 120px;
+}
+.journey-detail img.loaded {
+    animation: none;
+    background: none;
+}
+
+@keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ═══════════════════════════════════════
+   SKILL CARDS (v2 — tag-based)
+═══════════════════════════════════════ */
+
+.skillcard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.skillcard {
+    background: var(--card-bg, #fff);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.055);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.skillcard::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--sc, #c96a3a);
+    border-radius: 14px 14px 0 0;
+}
+
+.skillcard:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.11);
+}
+
+.skillcard-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.skillcard-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    background: var(--sc-light, #f5ede7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.skillcard-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary, #1c1a17);
+    line-height: 1.3;
+}
+
+.skillcard-level {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    margin-top: 3px;
+    opacity: 0.9;
+}
+
+.skillcard-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* Base tag */
+.sktag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: rgba(0,0,0,0.04);
+    color: var(--text-secondary, #555);
+    border: 1px solid rgba(0,0,0,0.1);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    cursor: default;
+    line-height: 1.2;
+}
+
+.sktag:hover {
+    background: var(--sc, #c96a3a);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* Proven tag — outline style */
+.sktag.proven {
+    background: transparent;
+    border-color: var(--sc, #c96a3a);
+    color: var(--sc, #c96a3a);
+}
+
+.sktag.proven:hover {
+    background: var(--sc, #c96a3a);
+    color: #fff;
+}
+
+/* Legend */
+.skill-legend {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Dark mode support */
+body.dark-mode .skillcard {
+    background: var(--card-bg, #1e1e2e);
+    border-color: rgba(255,255,255,0.08);
+}
+
+body.dark-mode .skillcard-title {
+    color: #f0eee8;
+}
+
+body.dark-mode .sktag {
+    background: rgba(255,255,255,0.06);
+    color: #ccc;
+    border-color: rgba(255,255,255,0.15);
+}
+
+body.dark-mode .sktag:hover {
+    background: var(--sc, #c96a3a);
+    color: #fff;
+    border-color: transparent;
+}
+
+body.dark-mode .sktag.proven {
+    background: transparent;
+    border-color: var(--sc, #c96a3a);
+    color: var(--sc, #c96a3a);
+}
+
+@media (max-width: 600px) {
+    .skillcard-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════
+   SKILL CARDS v3 — fixes & improvements
+═══════════════════════════════════════ */
+
+/* Override: icon pakai SVG — warna & background lebih kuat */
+.skillcard-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--sc-light);
+    border: 1.5px solid var(--sc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--sc);
+}
+
+/* Override: level text pakai warna accent card */
+.skillcard-level {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-top: 3px;
+    color: var(--sc);
+    opacity: 1;
+}
+
+/* Override: card background tinted sesuai warna */
+.skillcard {
+    background: color-mix(in srgb, var(--sc-light) 60%, white);
+}
+
+/* Override: proven tag lebih tebal & kontras */
+.sktag.proven {
+    background: white;
+    border: 1.5px solid var(--sc);
+    color: var(--sc);
+    font-weight: 600;
+}
+
+/* Override: tag biasa lebih jelas bedanya */
+.sktag {
+    background: rgba(0,0,0,0.05);
+    border: 1.5px dashed rgba(0,0,0,0.2);
+    color: #777;
+    font-weight: 500;
+}
+
+.sktag:hover {
+    background: var(--sc, #c96a3a);
+    color: #fff;
+    border-color: transparent;
+    border-style: solid;
+}
+
+.sktag.proven:hover {
+    background: var(--sc, #c96a3a);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* Legend top — muncul sebelum grid */
+.skill-legend-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    padding: 12px 20px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 100px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 32px;
+}
+
+.sll-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    color: #888;
+}
+
+/* Dark mode override v3 — kartu tetap keliatan warna aksennya */
+body.dark-mode .skillcard {
+    /* Warna aksen tetap muncul, cuma lebih gelap & redup */
+    background: color-mix(in srgb, var(--sc) 18%, #181818) !important;
+    border: 1.5px solid color-mix(in srgb, var(--sc) 40%, transparent) !important;
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--sc) 15%, transparent);
+}
+
+body.dark-mode .skillcard::before {
+    /* Garis atas tetap warna aksen penuh */
+    background: var(--sc) !important;
+    opacity: 0.85;
+}
+
+body.dark-mode .skillcard-icon {
+    background: color-mix(in srgb, var(--sc) 25%, #222) !important;
+    border-color: color-mix(in srgb, var(--sc) 60%, transparent) !important;
+}
+
+body.dark-mode .skillcard-title {
+    color: #f0eee8;
+}
+
+body.dark-mode .skillcard-level {
+    color: color-mix(in srgb, var(--sc) 80%, #fff) !important;
+    opacity: 1;
+}
+
+body.dark-mode .sktag {
+    background: color-mix(in srgb, var(--sc) 10%, rgba(255,255,255,0.04));
+    border-color: color-mix(in srgb, var(--sc) 35%, transparent);
+    border-style: dashed;
+    color: #bbb;
+}
+
+body.dark-mode .sktag:hover {
+    background: var(--sc);
+    color: #fff;
+    border-color: transparent;
+    border-style: solid;
+}
+
+body.dark-mode .sktag.proven {
+    background: color-mix(in srgb, var(--sc) 15%, transparent);
+    border: 1.5px solid var(--sc);
+    border-style: solid;
+    color: color-mix(in srgb, var(--sc) 90%, #fff);
+}
+
+body.dark-mode .sktag.proven:hover {
+    background: var(--sc);
+    color: #fff;
+}
+
+body.dark-mode .skill-legend-top {
+    background: rgba(255,255,255,0.05);
+    color: #aaa;
+}
+
+body.dark-mode .sll-item { color: #aaa; }
+
+body.dark-mode .sll-item {
+    color: #aaa;
+}
+
+/* ============================================================
+   PERBAIKAN TAMBAHAN
+   ============================================================ */
+
+/* FIX #3: Hamburger sebagai <button> */
+button.hamburger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1001;
+    padding: 10px;
+}
+
+/* FIX #3: Gateway card sebagai <button> */
+button.gateway-card {
+    font-family: 'Poppins', sans-serif;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    background: white;
+    width: 100%;
+    color: var(--text-color);
+}
+
+button.gateway-card:focus-visible {
+    outline: 3px solid var(--rose-gold);
+    outline-offset: 3px;
+}
+
+button.hamburger:focus-visible {
+    outline: 3px solid var(--rose-gold);
+    outline-offset: 3px;
+}
+
+/* FIX #4: Kolom tahun di tabel sertifikasi */
+.cert-table th:last-child,
+.cert-table td:last-child {
+    text-align: center;
+    min-width: 60px;
+}
+
+/* ============================================================
+   FIX #5: Form Kontak di Footer
+   ============================================================ */
+.contact-form-wrapper {
+    max-width: 520px;
+    margin: 0 auto 40px;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    gap: 12px;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: rgba(255,255,255,0.45);
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    border-color: var(--rose-gold);
+    background: rgba(255,255,255,0.13);
+}
+
+.contact-form textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.btn-send {
+    background: var(--rose-gold);
+    color: white;
+    border: none;
+    padding: 13px 28px;
+    border-radius: 50px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    align-self: center;
+}
+
+.btn-send:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--rose-gold) 50%, transparent);
+    background: color-mix(in srgb, var(--rose-gold) 80%, #fff);
+}
+
+.btn-send:focus-visible {
+    outline: 3px solid white;
+    outline-offset: 3px;
+}
+
+@media (max-width: 500px) {
+    .form-group {
+        flex-direction: column;
+    }
+}
+
+/* Dark mode untuk form */
+body.dark-mode .contact-form input,
+body.dark-mode .contact-form textarea {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(229, 164, 180, 0.3);
+    color: #fce4ec;
+}
+
+body.dark-mode .contact-form input:focus,
+body.dark-mode .contact-form textarea:focus {
+    border-color: var(--rose-gold);
+    background: rgba(229, 164, 180, 0.1);
+}
+
+/* ============================================================
+   FIX AKSESIBILITAS & POLISH
+   ============================================================ */
+
+
+/* Logo navbar sebagai <button> yang bisa diklik kembali ke lobby */
+button.logo {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Playfair Display', serif;
+    font-size: inherit;
+    color: var(--text-color);
+    padding: 0;
+    font-weight: 700;
+    transition: opacity 0.2s;
+}
+
+button.logo:hover {
+    opacity: 0.75;
+}
+
+button.logo:focus-visible {
+    outline: 3px solid var(--rose-gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+button.logo span {
+    color: var(--rose-gold);
+}
+
+body.dark-mode button.logo {
+    color: #fce4ec;
+}
+
+/* ============================================================
+   PERBAIKAN PUTARAN 4
+   ============================================================ */
+
+/* FIX 2: Scroll-to-top button */
+#scrollTopBtn {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--rose-gold);
+    color: white;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#scrollTopBtn.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#scrollTopBtn:hover {
+    transform: translateY(-3px);
+    background: color-mix(in srgb, var(--rose-gold) 80%, #000);
+}
+
+#scrollTopBtn:focus-visible {
+    outline: 3px solid var(--rose-gold);
+    outline-offset: 3px;
+}
+
+body.dark-mode #scrollTopBtn {
+    background: var(--rose-gold);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--rose-gold) 40%, transparent);
+}
+
+/* FIX 3: Active state sidebar link */
+.sidebar ul li a.active {
+    color: var(--rose-gold);
+    font-weight: 600;
+    background: rgba(229, 164, 180, 0.15);
+    border-radius: 8px;
+    padding-left: 10px;
+}
+
+/* FIX 6: Touch target hamburger lebih besar */
+.hamburger {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* FIX 7: Hover transition footer links */
+.footer-links a {
+    transition: color 0.2s, opacity 0.2s;
+}
+
+.footer-links a:hover {
+    color: #fff;
+    opacity: 1 !important;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--rose-gold) 80%, white);
+}
+
+/* FIX 4: Print CSS — sembunyikan dekorasi saat print/save PDF */
+@media print {
+    .envelope-overlay,
+    #dandelion-canvas,
+    nav,
+    .sidebar,
+    #scrollTopBtn,
+    .btn-download,
+    .gateway-cards,
+    .skill-legend-top,
+    .contact-form-wrapper,
+    .footer-links,
+    [data-aos] {
+        display: none !important;
+    }
+
+    body, .section, footer {
+        background: white !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+
+    .section {
+        display: block !important;
+        opacity: 1 !important;
+        page-break-inside: avoid;
+    }
+
+    a::after {
+        content: " (" attr(href) ")";
+        font-size: 10px;
+        color: #666;
+    }
+
+    a[href^="mailto"]::after,
+    a[href^="#"]::after {
+        content: none;
+    }
+}
+
+/* ============================================================
+   PERBAIKAN PUTARAN 5
+   ============================================================ */
+
+/* FIX 2: Skip-to-content link untuk pengguna keyboard */
+.skip-to-content {
+    position: absolute;
+    top: -100px;
+    left: 16px;
+    background: var(--rose-gold);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0 0 8px 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 99999;
+    transition: top 0.2s;
+    text-decoration: none;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* FIX 1: prefers-reduced-motion — matikan animasi untuk yang sensitif gerak */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    [data-aos] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    #dandelion-canvas {
+        display: none !important;
+    }
+
+    #scrollTopBtn {
+        transition: none !important;
+    }
+}
+
+/* FIX 7: prefers-color-scheme — auto dark mode jika OS sudah dark */
+@media (prefers-color-scheme: dark) {
+    body:not(.dark-mode):not(.light-mode-forced) {
+        --bg-color: #2d1b1e;
+        --text-color: #fce4ec;
+        --pink-bg: #3d2329;
+        --pink-soft: #4a2a30;
+        --card-bg: #3d2329;
+    }
+}
+
+/* SVG icons di sidebar ikut warna link */
+.sidebar ul li a svg {
+    color: var(--rose-gold);
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+.sidebar ul li a:hover svg,
+.sidebar ul li a.active svg {
+    color: var(--rose-gold);
+}
+body.dark-mode .sidebar ul li a svg {
+    color: #e5a4b4;
+}
+
+/* Dark mode: section dengan inline background harus transparan agar partikel terlihat */
+/* Attribute selector tidak bisa match var() yang sudah resolved, jadi target ID langsung */
+body.dark-mode #journey,
+body.dark-mode #certificates,
+body.dark-mode [style*="background-color: var(--pink-bg)"],
+body.dark-mode [style*="background-color:var(--pink-bg)"] {
+    background-color: transparent !important;
+}
+
+/* ═══════════════════════════════════════════
+   THEME SYSTEM — 8 tema warna
+   Cara kerja: ganti data-theme di <html>
+   Default (pink) = tidak perlu data-theme
+═══════════════════════════════════════════ */
+
+[data-theme="peach"] {
+    --pink-soft: #fff8f2;
+    --pink-bg:   #fff0e6;
+    --rose-gold: #e8824a;
+    --text-color:#5c3a1e;
+    --white:     #fff8f2;
+    --env-color: #ffe5cc;
+}
+[data-theme="blue"] {
+    --pink-soft: #f2f8ff;
+    --pink-bg:   #e6f2ff;
+    --rose-gold: #5a9fd4;
+    --text-color:#1a3a5c;
+    --white:     #f2f8ff;
+    --env-color: #cce3f5;
+}
+[data-theme="sage"] {
+    --pink-soft: #f4f8f4;
+    --pink-bg:   #e8f2e8;
+    --rose-gold: #6a9e72;
+    --text-color:#2d4a30;
+    --white:     #f4f8f4;
+    --env-color: #cce5cc;
+}
+[data-theme="lilac"] {
+    --pink-soft: #faf6ff;
+    --pink-bg:   #f2eaff;
+    --rose-gold: #9b72cf;
+    --text-color:#3d2060;
+    --white:     #faf6ff;
+    --env-color: #e0ccf5;
+}
+[data-theme="butter"] {
+    --pink-soft: #fffdf0;
+    --pink-bg:   #fffae0;
+    --rose-gold: #d4a800;
+    --text-color:#4a3800;
+    --white:     #fffdf0;
+    --env-color: #fff0b3;
+}
+[data-theme="grey"] {
+    --pink-soft: #f8f8f8;
+    --pink-bg:   #f0f0f0;
+    --rose-gold: #888888;
+    --text-color:#2a2a2a;
+    --white:     #f8f8f8;
+    --env-color: #e0e0e0;
+}
+[data-theme="mocha"] {
+    --pink-soft: #faf6f2;
+    --pink-bg:   #f2ece4;
+    --rose-gold: #a0714f;
+    --text-color:#3d2010;
+    --white:     #faf6f2;
+    --env-color: #e8d8c8;
+}
+
+/* Dark mode per tema — bg html ikut warna tema */
+[data-theme="peach"]:has(body.dark-mode)  { background-color: #2d1a0e !important; }
+[data-theme="blue"]:has(body.dark-mode)   { background-color: #0e1a2d !important; }
+[data-theme="sage"]:has(body.dark-mode)   { background-color: #0e2010 !important; }
+[data-theme="lilac"]:has(body.dark-mode)  { background-color: #1a0e2d !important; }
+[data-theme="butter"]:has(body.dark-mode) { background-color: #2a2000 !important; }
+[data-theme="grey"]:has(body.dark-mode)   { background-color: #1a1a1a !important; }
+[data-theme="mocha"]:has(body.dark-mode)  { background-color: #200e00 !important; }
+
+/* Transisi halus saat ganti tema */
+html, body, nav, .hero, .section, .card, .sidebar,
+.btn-download, .gateway-card, .skillcard, .sktag {
+    transition: background-color 0.35s ease, color 0.25s ease,
+                border-color 0.25s ease !important;
+}
+
+/* ═══════════════════════════════════════════
+   THEME PICKER DOTS — di navbar
+═══════════════════════════════════════════ */
+.theme-picker {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 4px;
+}
+
+.theme-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+    padding: 0;
+    background-clip: padding-box;
+}
+
+.theme-dot:hover {
+    transform: scale(1.3);
+}
+
+.theme-dot.active {
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 2px var(--rose-gold);
+    transform: scale(1.15);
+}
+
+body.dark-mode .theme-dot.active {
+    border-color: #fff;
+}
+
+/* Time badge */
+#time-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 7px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.07);
+    color: var(--text-color);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    margin: 0 2px;
+}
+
+body.dark-mode #time-badge {
+    background: rgba(255,255,255,0.1);
+    color: #fce4ec;
+}
+
+@media (max-width: 480px) {
+    .theme-dot { width: 13px; height: 13px; }
+    #time-badge { display: none; }
+}
+
+/* Amplop selalu pink — tidak ikut tema apapun */
+.envelope,
+.envelope-overlay { background-color: #FEF6F8 !important; }
+.envelope { background: #FFE5ED !important; }
+.envelope::before { border-top-color: #FFE5ED !important; }
+.envelope::after {
+    border-bottom-color: #FFE5ED !important;
+    border-left-color: #FFE5ED !important;
+    border-right-color: #FFE5ED !important;
+}
+/* Amplop tetap pink di dark mode — jangan ikut tema */
+body.dark-mode .envelope-overlay { background-color: #2d1b1e !important; }
+body.dark-mode .envelope { background: #FFE5ED !important; }
+body.dark-mode .envelope::before { border-top-color: #FFE5ED !important; }
+body.dark-mode .envelope::after {
+    border-bottom-color: #FFE5ED !important;
+    border-left-color: #FFE5ED !important;
+    border-right-color: #FFE5ED !important;
+}
+
+/* ── REF=PRO MODE — tampilan profesional ── */
+body.ref-pro .hero {
+    background: linear-gradient(135deg, #f0f4ff 0%, #fafbff 100%) !important;
+}
+body.ref-pro .profile-img-hero {
+    border-color: #e5a4b4;
+}
+
+/* Open to Work badge animasi subtle */
+#open-to-work-badge {
+    animation: pulse-green 2.5s ease-in-out infinite;
+}
+@keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(29,158,117,0); }
+}
+
+/* ═══════════════════════════════════════════
+   SETTINGS PANEL
+═══════════════════════════════════════════ */
+
+/* Overlay gelap di belakang panel */
+#sp-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(2px);
+}
+#sp-overlay.open { display: block; }
+
+/* Panel box */
+#settings-panel {
+    position: fixed;
+    top: 70px;
+    right: -320px;
+    width: 280px;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    z-index: 2001;
+    padding: 20px;
+    transition: right 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+    border: 1px solid rgba(229,164,180,0.3);
+}
+#settings-panel.open { right: 16px; }
+
+body.dark-mode #settings-panel {
+    background: color-mix(in srgb, var(--rose-gold) 8%, #121212);
+    border-color: var(--rose-gold);
+    color: #fce4ec;
+}
+
+.sp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-color);
+}
+body.dark-mode .sp-header { color: #fce4ec; }
+
+.sp-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #aaa;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+.sp-close:hover { background: rgba(0,0,0,0.07); color: #333; }
+
+.sp-section {
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.sp-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+body.dark-mode .sp-section { border-bottom-color: rgba(255,255,255,0.08); }
+
+.sp-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--rose-gold);
+    margin-bottom: 10px;
+}
+
+/* Dots warna */
+.sp-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.sp-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+    padding: 0;
+}
+.sp-dot:hover { transform: scale(1.2); }
+.sp-dot.active {
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 3px var(--rose-gold);
+    transform: scale(1.1);
+}
+body.dark-mode .sp-dot.active { border-color: #fff; }
+
+.sp-theme-name {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+    min-height: 16px;
+}
+body.dark-mode .sp-theme-name { color: #aaa; }
+
+/* Row toggle */
+.sp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.sp-hint {
+    font-size: 11px;
+    color: #aaa;
+}
+
+/* Toggle switch */
+.sp-toggle {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
+}
+.sp-toggle input { opacity: 0; width: 0; height: 0; }
+.sp-slider {
+    position: absolute;
+    inset: 0;
+    background: #ccc;
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.25s;
+}
+.sp-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.sp-toggle input:checked + .sp-slider { background: var(--rose-gold); }
+.sp-toggle input:checked + .sp-slider::before { transform: translateX(16px); }
+
+/* ── Fix SVG sidebar ikut warna tema ── */
+.sidebar ul li a {
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+}
+.sidebar ul li a svg {
+    color: var(--rose-gold) !important;
+    flex-shrink: 0;
+    transition: color 0.3s;
+}
+.sidebar ul li a:hover svg,
+.sidebar ul li a.active svg {
+    color: var(--rose-gold) !important;
+    filter: brightness(1.15);
+}
+body.dark-mode .sidebar ul li a svg {
+    color: var(--rose-gold) !important;
+}
+
+/* Transition tema halus di seluruh halaman */
+*, *::before, *::after {
+    transition: background-color 0.35s ease, color 0.25s ease,
+                border-color 0.25s ease, box-shadow 0.25s ease;
+}
+/* Kecualikan animasi yang tidak perlu ikut transition */
+.envelope, .envelope::before, .envelope::after,
+canvas, img, video, svg {
+    transition: none !important;
+}
 
