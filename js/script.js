@@ -1,1 +1,913 @@
+// 1. Inisialisasi Animasi AOS — durasi lebih pendek di mobile agar terasa lebih cepat
+const isMobile = window.innerWidth < 768;
+AOS.init({ duration: isMobile ? 600 : 1000, once: true, offset: 50 });
+
+// Decode gambar penting di awal agar tidak lambat saat muncul
+['assets/images/foto-profil.jpeg'].forEach(src => {
+    const img = new Image();
+    img.src = src;
+    img.decode().catch(() => {});
+});
+
+// Skeleton loading — tambah class 'loaded' setelah gambar selesai
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('img.card-preview, .journey-detail img').forEach(img => {
+        if (img.complete) {
+            img.classList.add('loaded');
+        } else {
+            img.addEventListener('load', () => img.classList.add('loaded'));
+            img.addEventListener('error', () => img.classList.add('loaded'));
+        }
+    });
+});
+
+// 2. Fungsi Untuk Buka Amplop Vintage
+function openEnvelope() {
+    const overlay = document.getElementById('envelopeOverlay');
+    overlay.classList.add('open');
+    setTimeout(() => {
+        overlay.classList.add('fade-out');
+        document.body.classList.remove('no-scroll');
+    }, 2500);
+}
+
+// 3. Fungsi Sidebar/Menu
+function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.querySelector('.hamburger');
+    const isActive = sidebar.classList.toggle('active');
+    if (hamburger) hamburger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+}
+
+document.addEventListener('click', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.querySelector('.hamburger');
+    if (
+        sidebar && sidebar.classList.contains('active') &&
+        !sidebar.contains(e.target) &&
+        hamburger && !hamburger.contains(e.target)
+    ) {
+        sidebar.classList.remove('active');
+        if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+    }
+});
+
+// 4. Logika Partikel — Dandelion Canvas
+let dandelionCanvas, dandelionCtx, dandelionParticles = [], dandelionAnimId;
+
+function initDandelionCanvas() {
+    if (dandelionCanvas) return;
+    dandelionCanvas = document.createElement('canvas');
+    dandelionCanvas.id = 'dandelion-canvas';
+    Object.assign(dandelionCanvas.style, {
+        position: 'fixed', top: '0', left: '0',
+        width: '100%', height: '100%',
+        pointerEvents: 'none',
+        zIndex: '-1'
+    });
+    document.body.appendChild(dandelionCanvas);
+    dandelionCtx = dandelionCanvas.getContext('2d');
+    resizeDandelion();
+    window.addEventListener('resize', resizeDandelion);
+}
+
+function resizeDandelion() {
+    if (!dandelionCanvas) return;
+    dandelionCanvas.width  = window.innerWidth;
+    dandelionCanvas.height = window.innerHeight;
+}
+
+const DANDELION_COLORS_LIGHT = [
+    'rgba(255,215,60,',
+    'rgba(255,195,40,',
+    'rgba(255,235,120,',
+    'rgba(240,200,70,',
+    'rgba(255,245,160,',
+];
+const DANDELION_COLORS_DARK = [
+    'rgba(255,240,120,',
+    'rgba(255,225,80,',
+    'rgba(255,210,50,',
+    'rgba(255,255,200,',
+    'rgba(255,200,100,',
+];
+
+class DandelionParticle {
+    constructor(initial) { this.reset(initial); }
+    reset(initial = false) {
+        const w = dandelionCanvas.width, h = dandelionCanvas.height;
+        const isDark = document.body.classList.contains('dark-mode');
+        this.x = Math.random() * w;
+        this.y = initial ? Math.random() * h : h + 20;
+        this.radius    = isDark ? Math.random() * 3.5 + 1.5 : Math.random() * 2.2 + 0.7;
+        this.speedY    = -(Math.random() * 0.55 + 0.25);
+        this.speedX    = (Math.random() - 0.5) * 0.35;
+        this.swayAmp   = Math.random() * 1.1 + 0.3;
+        this.swaySpeed = Math.random() * 0.018 + 0.007;
+        this.swayOff   = Math.random() * Math.PI * 2;
+        this.alpha     = isDark ? Math.random() * 0.4 + 0.6 : Math.random() * 0.5 + 0.3;
+        this.targetAlpha = this.alpha;
+        this.fadeSpeed = Math.random() * 0.004 + 0.002;
+        this.rotation  = Math.random() * Math.PI * 2;
+        this.rotSpeed  = (Math.random() - 0.5) * 0.013;
+        this.type      = Math.random() > 0.4 ? 'circle' : 'wisp';
+        this.wispLen   = Math.random() * 6 + 3;
+        this.age = 0;
+        const palette = isDark ? DANDELION_COLORS_DARK : DANDELION_COLORS_LIGHT;
+        this.color = palette[Math.floor(Math.random() * palette.length)];
+    }
+    update() {
+        this.age++;
+        this.x += this.speedX + Math.sin(this.age * this.swaySpeed + this.swayOff) * this.swayAmp * 0.05;
+        this.y += this.speedY;
+        this.rotation += this.rotSpeed;
+        if (this.age < 60) this.alpha = Math.min(this.targetAlpha, this.age / 60 * this.targetAlpha);
+        if (this.y < 80)   this.alpha -= this.fadeSpeed;
+        if (this.y < -20 || this.alpha <= 0) this.reset();
+    }
+    draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        if (this.type === 'circle') {
+            const g = ctx.createRadialGradient(0,0,0,0,0,this.radius*2.5);
+            g.addColorStop(0,   this.color + '0.9)');
+            g.addColorStop(0.5, this.color + '0.5)');
+            g.addColorStop(1,   this.color + '0)');
+            ctx.beginPath(); ctx.arc(0,0,this.radius*2.5,0,Math.PI*2);
+            ctx.fillStyle = g; ctx.fill();
+            ctx.beginPath(); ctx.arc(0,0,this.radius*0.6,0,Math.PI*2);
+            ctx.fillStyle = this.color + '1)'; ctx.fill();
+        } else {
+            ctx.strokeStyle = this.color + '0.7)';
+            ctx.lineWidth = 0.5; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-this.wispLen); ctx.stroke();
+            for (let i = 0; i < 4; i++) {
+                const a = (i/4)*Math.PI*2, tl = this.wispLen*0.5;
+                ctx.beginPath(); ctx.moveTo(0,-this.wispLen);
+                ctx.lineTo(Math.cos(a)*tl, -this.wispLen+Math.sin(a)*tl); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.arc(0,-this.wispLen,0.8,0,Math.PI*2);
+            ctx.fillStyle = this.color+'0.9)'; ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+let mouseX = -999, mouseY = -999;
+window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
+
+function dandelionLoop() {
+    dandelionCtx.clearRect(0,0,dandelionCanvas.width,dandelionCanvas.height);
+    dandelionParticles.forEach(p => {
+        const dx = p.x - mouseX, dy = p.y - mouseY;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if (dist < 80) { const f=(80-dist)/80; p.x+=(dx/dist)*f*1.5; p.y+=(dy/dist)*f*1.5; }
+        p.update(); p.draw(dandelionCtx);
+    });
+    dandelionAnimId = requestAnimationFrame(dandelionLoop);
+}
+
+function createParticles() {
+    initDandelionCanvas();
+    if (dandelionAnimId) {
+        cancelAnimationFrame(dandelionAnimId);
+        dandelionAnimId = null;
+    }
+    dandelionParticles = Array.from({length: 60}, (_, i) => new DandelionParticle(i < 40));
+    dandelionLoop();
+}
+
+// 5. Logika Dark Mode
+const btnDark = document.getElementById('darkModeToggle');
+
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+}
+
+if (btnDark) {
+    const isDarkOnLoad = document.body.classList.contains('dark-mode');
+    btnDark.innerText = isDarkOnLoad ? '☀️' : '🌙';
+
+    btnDark.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        btnDark.innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('darkMode', isDark ? 'on' : 'off');
+        // Update html background sesuai tema aktif
+        setTimeout(() => {
+            document.documentElement.style.backgroundColor =
+                isDark ? (THEME_DARK_BG[activeTheme] || '#2d1b1e') : '';
+        }, 0);
+        createParticles();
+    });
+}
+
+// Setup WhatsApp link (nomor tidak terekspos di HTML source)
+(function() {
+    const waEl = document.getElementById('wa-link');
+    if (waEl) {
+        const p1 = '6289731';
+        const p2 = '79630';
+        waEl.href = 'https://wa.me/' + p1 + p2;
+    }
+})();
+
+// 6. DATA TERJEMAHAN
+const translations = {
+    'hero-desc': [
+        "Seorang Multidisiplin Lulusan D3 Teknik Informatika UDINUS yang menghubungkan ketelitian Administrasi Servis dengan inovasi Front-End Development. Saya memadukan logika sistem, disiplin operasional, dan estetika visual untuk menciptakan solusi digital yang presisi dan intuitif.",
+        "A Multidisciplinary Informatics Engineering graduate from UDINUS, bridging Service Administration precision with Front-End Development innovation. I blend system logic, operational discipline, and visual aesthetics to build precise and intuitive digital solutions."
+    ],
+    'ProTitle': ['Professional Path', 'Professional Path'],
+    'ProDesc':  ['IT & Admin Portfolio', 'IT & Admin Portfolio'],
+    'CreTitle': ['Creative Hub', 'Creative Hub'],
+    'CreDesc':  ['Art & Sewing Works', 'Art & Sewing Works'],
+    'PerTitle': ['The Story', 'The Story'],
+    'PerDesc':  ['My Life & Journey', 'My Life & Journey'],
+    'BRATitle': ['PT Bumen Redja Abadi', 'PT Bumen Redja Abadi'],
+    'BRADesc1': ['• Menginput data klaim (informasi kendaraan, jenis kendaraan, part yang diganti) ke dalam sistem.', '• Inputting claim data (vehicle info, vehicle type, replaced parts) into the system.'],
+    'BRADesc2': ['• Mengelola dan mengarsipkan semua dokumen klaim garansi (faktur, job order, formulir klaim, foto kerusakan, dll) baik secara fisik maupun digital.', '• Managing and archiving all warranty claim documents (invoices, job orders, claim forms, damage photos, etc.) both physically and digitally.'],
+    'BRADesc3': ['• Memastikan kelengkapan dan keakuratan data klaim sebagai bukti.', '• Ensuring the completeness and accuracy of claim data as evidence.'],
+    'BRADesc4': ['• Berkoordinasi dengan bagian bengkel/teknisi terkait teknis perbaikan dan penggantian part garansi.', '• Coordinating with the workshop/technician team on repair procedures and warranty part replacements.'],
+    'BRADesc5': ['• Membuat laporan mengenai jumlah klaim, status klaim yang ditolak, atau masih dalam proses.', '• Generating reports on total claims, rejected statuses, and claims still in progress.'],
+    'BPNTitle': ['Kantor Wilayah ATR/BPN Provinsi Jawa Tengah', 'Regional Office ATR/BPN Central Java Province'],
+    'BPNClear': ['Karyawan Koperasi', 'Cooperative Employee'],
+    'BPNDesc1': ['• Mengelola dan memelihara akurasi data inventaris stok kebutuhan kantor, mengurangi potensi stockout hingga 15%.', '• Managing and maintaining office supply inventory data accuracy, reducing stockout risk by up to 15%.'],
+    'BPNDesc2': ['• Menerapkan alur kerja (workflow) terstruktur untuk prosedur permintaan dan distribusi barang, menjamin efisiensi operasional.', '• Implementing a structured workflow for goods request and distribution procedures, ensuring operational efficiency.'],
+    'BPNDesc3': ['• Bertanggung jawab atas integritas dan kepatuhan data, serta mengkoordinasikan respons terhadap permintaan data mendesak antar unit kerja.', '• Responsible for data integrity and compliance, coordinating responses to urgent data requests across work units.'],
+    'BPNDesc4': ['• Berkolaborasi dengan stakeholder internal untuk memastikan kelancaran operasional dan kebutuhan unit kerja terpenuhi.', '• Collaborating with internal stakeholders to ensure smooth operations and fulfill work unit needs.'],
+    'SIMTitle': ['PT Swakarya Insan Mandiri', 'PT Swakarya Insan Mandiri'],
+    'SIMDesc1': ['• Secara konsisten menginput dan memproses 840 data Kartu Keluarga (KK) untuk mitra FIF.', '• Consistently inputting and processing 840 Family Card (KK) records for FIF partners.'],
+    'SIMDesc2': ['• Mempertahankan tingkat akurasi data 99% melalui verifikasi silang data, secara efektif mengurangi error rate dalam basis data operasional.', '• Maintaining a 99% data accuracy rate through cross-verification, effectively reducing error rates in the operational database.'],
+    'SIMDesc3': ['• Mengoperasikan sistem input data proprietary dan memanfaatkan Microsoft Excel untuk manajemen dan pelaporan data.', '• Operating a proprietary data entry system and leveraging Microsoft Excel for data management and reporting.'],
+    'SIMDesc4': ['• Melakukan pembersihan data (data cleaning) dan validasi data secara teratur untuk memastikan konsistensi dan integritas data historis.', '• Regularly performing data cleaning and validation to ensure consistency and integrity of historical data.'],
+    'KanwilTitle': ['Kantor Wilayah ATR/BPN Provinsi Jawa Tengah', 'Regional Office ATR/BPN Central Java Province'],
+    'KanwilDesc1': ['• Secara rutin menerapkan pembaruan sistem operasi (patching), firmware, dan upgrade perangkat lunak untuk menjaga keamanan dan kinerja.', '• Routinely applying OS patching, firmware updates, and software upgrades to maintain security and performance.'],
+    'KanwilDesc2': ['• Melakukan perencanaan kapasitas (capacity planning) untuk memastikan sumber daya server dan storage cukup.', '• Conducting capacity planning to ensure adequate server and storage resources.'],
+    'KanwilDesc3': ['• Melakukan audit berkala terhadap perangkat keras dan perangkat lunak untuk memastikan kepatuhan dan mendeteksi kerentanan.', '• Performing periodic hardware and software audits to ensure compliance and detect vulnerabilities.'],
+    'KanwilDesc4': ['• Mendiagnosis dan menyelesaikan masalah kompleks yang berkaitan dengan server, sistem operasi, aplikasi, atau koneksi ke penyimpanan data.', '• Diagnosing and resolving complex issues related to servers, operating systems, applications, or storage connections.'],
+    'KanwilDesc5': ['• Memberikan dukungan teknis kepada tim lain (misalnya developer atau end-user) terkait akses dan masalah pada sistem server.', '• Providing technical support to other teams (e.g., developers or end-users) regarding server system access and issues.'],
+    'IdolaTitle': ['Milkshake Idola & Seblak Seuhah', 'Milkshake Idola & Seblak Seuhah'],
+    'IdolaDesc1': ['• Mengelola dan merekapitulasi seluruh transaksi penjualan harian dan memastikan akurasi perhitungan dan keseimbangan kas akhir hari.', '• Managing and reconciling all daily sales transactions, ensuring calculation accuracy and end-of-day cash balance.'],
+    'IdolaDesc2': ['• Mencatat data penjualan dan permintaan pelanggan untuk dianalisis sebagai masukan peningkatan stok dan menu.', '• Recording sales data and customer requests for analysis to improve stock and menu offerings.'],
+    'IdolaDesc3': ['• Berinteraksi langsung dengan pelanggan untuk memahami kebutuhan, mengelola keluhan, dan memastikan kepuasan layanan.', '• Directly interacting with customers to understand needs, manage complaints, and ensure service satisfaction.'],
+    'IdolaDesc4': ['• Bertanggung jawab atas stock management dan kerapian operasional untuk memastikan kualitas layanan yang tinggi.', '• Responsible for stock management and operational tidiness to ensure high service quality.'],
+    'UDINUSTitle': ['Universitas Dian Nuswantoro', 'Universitas Dian Nuswantoro'],
+    'UDINUSDesc1': ['• Menjadi Panitia Workshop HMDTI Tahun 2023.', '• Served as Workshop Committee of HMDTI 2023.'],
+    'UDINUSDesc2': ['• Mengikuti UKM Catur.', '• Joined Chess Student Activity Unit.'],
+    'UDINUSDesc3': ['• Menjadi Anggota dan ikut serta aktif dalam kegiatan HMDTI.', '• Active member of HMDTI student organization.'],
+    'BBPLKTitle': ['BBPLK Semarang', 'BBPLK Semarang'],
+    'BBPLKDesc1': ['• Menjahit dengan Alat Jahit Tangan', '• Sewing with hand tools'],
+    'BBPLKDesc2': ['• Menjahit dengan Mesin.', '• Sewing with machine.'],
+    'BBPLKDesc3': ['• Mengikuti Prosedur Keselamatan & Kesehatan di Tempat Kerja (K3).', '• Following Occupational Health & Safety (K3) procedures.'],
+    'SMA10Title': ['SMA N 10 Semarang', 'SMA N 10 Semarang'],
+    'SMA10Desc1': ['• Mengikuti Ekstrakurikuler Palang Merah Remaja', '• Joined Youth Red Cross extracurricular.'],
+    'SMA10Desc2': ['• Mengikuti Ekstrakurikuler Olimpiade Kimia', '• Joined Chemistry Olympiad extracurricular.'],
+    'SMA10Desc3': ['• Mengikuti Lomba di Sakura No Matsuri Hino Tahun 2017, lomba OSN Ekonomi, lomba Mural Art.', '• Participated in Sakura No Matsuri Hino 2017, OSN Economics, and Mural Art competitions.'],
+    'SMP6Title': ['SMP N 6 Semarang', 'SMP N 6 Semarang'],
+    'SMP6Desc1': ['• Mengikuti Ekstrakurikuler Karya Ilmiah Remaja', '• Joined Youth Science Club extracurricular.'],
+    'SMP6Desc2': ['• Mengikuti Ekstrakurikuler Catur', '• Joined Chess extracurricular.'],
+    'SMP6Desc3': ['• Mengikuti Lomba Menulis Cerpen.', '• Participated in Short Story Writing competition.'],
+    'SejatiTitle': ['Toko Sejati Cosmetics', 'Toko Sejati Cosmetics'],
+    'SejatiDesc': ['Website untuk E-Commerce Toko Sejati Cosmetics', 'E-Commerce website for Toko Sejati Cosmetics'],
+    'BRATitlePro': ['BRA-WAREHOUSE SERVICE', 'BRA-WAREHOUSE SERVICE'],
+    'BRADescPro': ['Sistem Pencatatan detail kendaraan mulai dari Nomor WO, Plat Nomor, hingga Tipe Kendaraan dan Nama Customer secara terstruktur', 'Structured vehicle detail recording system covering WO Number, License Plate, Vehicle Type, and Customer Name.'],
+    'INKATitle': ['SI-INKA', 'SI-INKA'],
+    'INKADesc': ['Sistem Inventaris Barang Kanwil ATR/BPN berbasis Website & Mobile', 'Website & Mobile-based inventory system for Kanwil ATR/BPN'],
+    'GOBELTitlePro': ['GOBEL-GO BELAJAR', 'GOBEL-GO BELAJAR'],
+    'GOBELDesc': ['Website GO-BELAJAR untuk bimbingan belajar', 'GO-BELAJAR website for study guidance'],
+    'GISTitle': ['PETA PERSEBARAN WILAYAH JAMBI DALAM BENTUK WEB GIS', 'JAMBI DISTRIBUTION MAP IN WEB GIS FORMAT'],
+    'GISDesc': ['Sistem Informasi Geografis Persebaran Rumah Sakit Pada Wilayah Kota Jambi Tahun 2016', 'Geographic Information System of Hospital Distribution in Jambi City 2016'],
+    'LyferaTitle': ["Lyfera's Art", "Lyfera's Art"],
+    'LyferaDesc': ['Kumpulan berbagai karya seni ku dalam bentuk website yang interaktif', 'A collection of my artworks in an interactive website format.'],
+    'CVText': ['📄 Download CV', '📄 Download CV'],
+    'skills-note':    ['Diekstrak dari proyek nyata, pengalaman kerja, dan sertifikasi ✨', 'Extracted from real projects, work experience, and certifications ✨'],
+    'legend-proven':  ['= terbukti dari kerja / proyek nyata', '= proven from real work / projects'],
+    'legend-familiar':['= familiar / pernah dipelajari', '= familiar / have studied before'],
+    'cert1': ['Sertifikat Kompetensi Keahlian Pemrograman Web', 'Web Programming Competency Certificate'],
+    'cert2': ['Sertifikat Kompetensi Pemrograman Mobil Pratama', 'Mobile Programming Competency Certificate'],
+    'cert3': ['TOEFL PREPARATION', 'TOEFL PREPARATION'],
+    'cert4': ['Sertifikat Seminar Nasional Teknik Informatika', 'National Informatics Engineering Seminar Certificate'],
+    'cert5': ['Sertifikat Kompetensi Menjahit Pakaian', 'Clothing Sewing Competency Certificate'],
+    'cert6': ['Sertifikat Kompetensi Menjahit Pakaian', 'Clothing Sewing Competency Certificate'],
+    'cert7': ['Sertifikat Finalis 8 Besar Business Plan', 'Top 8 Finalist Business Plan Certificate'],
+    'cert8': ['Sertifikat Lomba Mural Art', 'Mural Art Competition Certificate'],
+    'contact-subtitle': ['Tertarik berkolaborasi atau punya pertanyaan? Kirim pesan langsung! ✨', 'Interested in collaborating or have a question? Send a message! ✨'],
+    'btn-send': ['Kirim Pesan 💌', 'Send Message 💌'],
+    'nav-home':              ['Home / Lobby',       'Home / Lobby'],
+    'nav-skills':            ['Technical Skills',    'Technical Skills'],
+    'nav-projects-pro':      ['IT Projects',         'IT Projects'],
+    'nav-certs':             ['IT Certifications',   'IT Certifications'],
+    'nav-projects-creative': ['Art & Sewing',        'Art & Sewing'],
+    'nav-journey':           ['My Story',            'My Story'],
+    'nav-contact':           ['Contact',             'Contact'],
+};
+
+const htmlTranslations = {
+    'hero-h1': [
+        'Halo, Aku <span>Shafira Zahra</span> ✨',
+        "Hi, I'm <span>Shafira Zahra</span> ✨"
+    ]
+};
+
+const sectionTitleTranslations = [
+    ['Technical Skills', 'Technical Skills'],
+    ['My Journey', 'My Journey'],
+    ['Featured Projects', 'Featured Projects'],
+    ['Certifications', 'Certifications'],
+];
+
+const shortDescMap = [
+    ['BRATitle',    'Warranty Service Claim Administrator', 'Warranty Service Claim Administrator'],
+    ['BPNTitle',    'Karyawan Koperasi',                   'Cooperative Employee'],
+    ['SIMTitle',    'Data Entry',                          'Data Entry'],
+    ['KanwilTitle', 'Data Engineer | Data Center',         'Data Engineer | Data Center'],
+    ['IdolaTitle',  'F&B Stand Operator',                  'F&B Stand Operator'],
+    ['UDINUSTitle', 'D3 Teknik Informatika | IPK 3,51',    'D3 Informatics Engineering | GPA 3.51'],
+    ['BBPLKTitle',  'Pelatihan Kerja Menjahit Pakaian Pria | A', 'Tailoring Vocational Training | A'],
+    ['SMA10Title',  'Jurusan MIPA | 82,60',                'Science Major | 82.60'],
+    ['SMP6Title',   '84,00',                               '84.00'],
+];
+
+// 7. FUNGSI TERAPKAN BAHASA
+const SVG_NAV_IDS = new Set(['nav-home','nav-skills','nav-projects-pro','nav-certs','nav-projects-creative','nav-journey','nav-contact']);
+
+function applyLanguage(langIndex) {
+    for (const [id, texts] of Object.entries(translations)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (SVG_NAV_IDS.has(id)) {
+            const textNodes = Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE);
+            if (textNodes.length > 0) {
+                textNodes[textNodes.length - 1].textContent = ' ' + texts[langIndex];
+            } else {
+                el.appendChild(document.createTextNode(' ' + texts[langIndex]));
+            }
+        } else {
+            el.innerText = texts[langIndex];
+        }
+    }
+    const heroH1 = document.querySelector('.hero h1');
+    if (heroH1) heroH1.innerHTML = htmlTranslations['hero-h1'][langIndex];
+
+    document.querySelectorAll('.section-title').forEach((el, idx) => {
+        if (sectionTitleTranslations[idx]) el.innerText = sectionTitleTranslations[idx][langIndex];
+    });
+
+    const journeyHint = document.getElementById('journey-hint');
+    if (journeyHint) journeyHint.innerText = langIndex === 1
+        ? '(Click the place name to see documentation details ✨)'
+        : '(Klik nama tempat untuk detail dokumentasi ✨)';
+
+    shortDescMap.forEach(([headerId, textID, textEN]) => {
+        const headerEl = document.getElementById(headerId);
+        if (headerEl) {
+            const parent = headerEl.closest('.journey-item');
+            if (parent) {
+                const shortDesc = parent.querySelector('.short-desc:not([id])');
+                if (shortDesc) shortDesc.innerText = langIndex === 1 ? textEN : textID;
+            }
+        }
+    });
+
+    const certHeaderName   = document.getElementById('cert-header-name');
+    const certHeaderIssuer = document.getElementById('cert-header-issuer');
+    const certHeaderYear   = document.getElementById('cert-header-year');
+    if (certHeaderName)   certHeaderName.innerText   = langIndex === 1 ? 'Certificate Name' : 'Nama Sertifikat';
+    if (certHeaderIssuer) certHeaderIssuer.innerText = langIndex === 1 ? 'Issuer'           : 'Penyelenggara';
+    if (certHeaderYear)   certHeaderYear.innerText   = langIndex === 1 ? 'Year'             : 'Tahun';
+
+    const inputName    = document.getElementById('input-name');
+    const inputEmail   = document.getElementById('input-email');
+    const inputMessage = document.getElementById('input-message');
+    if (inputName)    inputName.placeholder    = langIndex === 1 ? 'Your name 🌸'      : 'Nama kamu 🌸';
+    if (inputEmail)   inputEmail.placeholder   = langIndex === 1 ? 'Your email 📧'     : 'Email kamu 📧';
+    if (inputMessage) inputMessage.placeholder = langIndex === 1 ? 'Your message... ✨' : 'Pesan kamu... ✨';
+
+    const htmlRoot = document.getElementById('htmlRoot');
+    if (htmlRoot) htmlRoot.setAttribute('lang', langIndex === 1 ? 'en' : 'id');
+}
+
+// 8. TOMBOL BAHASA
+const btnLang = document.getElementById('langToggle');
+if (btnLang) {
+    const storedLang = localStorage.getItem('lang') || 'id';
+    const storedLangIndex = storedLang === 'en' ? 1 : 0;
+    btnLang.innerText = storedLang === 'en' ? 'ID' : 'EN';
+    if (storedLangIndex === 1) applyLanguage(1);
+
+    btnLang.addEventListener('click', () => {
+        const isEN = btnLang.innerText === 'EN';
+        const langIndex = isEN ? 1 : 0;
+        applyLanguage(langIndex);
+        btnLang.innerText = isEN ? 'ID' : 'EN';
+        localStorage.setItem('lang', isEN ? 'en' : 'id');
+    });
+}
+
+// Jalankan partikel
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (!prefersReducedMotion) {
+    createParticles();
+} else {
+    document.querySelectorAll('[data-aos]').forEach(el => el.removeAttribute('data-aos'));
+}
+
+// Auto dark mode dari OS jika belum ada preferensi tersimpan
+if (!localStorage.getItem('darkMode')) {
+    const osDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (osDark) {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('darkMode', 'on');
+        const btn = document.getElementById('darkModeToggle');
+        if (btn) btn.innerText = '☀️';
+    }
+}
+
+// Copyright tahun otomatis
+const yearEl = document.getElementById('currentYear');
+if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+// Scroll-to-top
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+if (scrollTopBtn) {
+    window.addEventListener('scroll', () => {
+        scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+    });
+}
+
+// Active state sidebar
+const sectionIds = ['skills', 'projects', 'certificates', 'journey', 'contact'];
+const navMap = {
+    'skills':       ['nav-skills'],
+    'projects':     ['nav-projects-pro', 'nav-projects-creative'],
+    'certificates': ['nav-certs'],
+    'journey':      ['nav-journey'],
+    'contact':      ['nav-contact'],
+};
+
+const observerOptions = { rootMargin: '-40% 0px -40% 0px', threshold: 0 };
+const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            document.querySelectorAll('.sidebar ul li a').forEach(a => a.classList.remove('active'));
+            const ids = navMap[entry.target.id] || [];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('active');
+            });
+        }
+    });
+}, observerOptions);
+
+sectionIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) sectionObserver.observe(el);
+});
+
+// Form kontak
+const contactForm = document.querySelector('.contact-form');
+if (contactForm) {
+    contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = contactForm.querySelector('.btn-send');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Mengirim...';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        try {
+            const response = await fetch(contactForm.action, {
+                method: 'POST',
+                body: new FormData(contactForm),
+                headers: { 'Accept': 'application/json' }
+            });
+            if (response.ok) {
+                btn.innerHTML = '✅ Pesan Terkirim!';
+                btn.style.background = '#4caf50';
+                btn.style.opacity = '1';
+                contactForm.reset();
+                setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ''; btn.disabled = false; }, 4000);
+            } else { throw new Error('Gagal'); }
+        } catch {
+            btn.innerHTML = '❌ Gagal, coba lagi';
+            btn.style.background = '#e53935';
+            btn.style.opacity = '1';
+            setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ''; btn.disabled = false; }, 4000);
+        }
+    });
+}
+
+// Sembunyikan semua section saat amplop belum dibuka
+document.querySelectorAll('.section').forEach(sec => sec.classList.add('section-hidden'));
+
+function filterContent(category) {
+    document.querySelector('.hero').classList.add('section-hidden');
+    const backBtn = document.getElementById('backToLobby');
+    if (backBtn) backBtn.style.display = 'block';
+
+    document.querySelectorAll('.section').forEach(sec => {
+        sec.classList.remove('section-hidden');
+        sec.style.display = 'block';
+    });
+
+    const allItems = document.querySelectorAll('.journey-item, .card, tbody tr');
+    allItems.forEach(item => {
+        item.style.display = item.classList.contains('type-' + category) ? '' : 'none';
+    });
+
+    if (category === 'pro') {
+        document.getElementById('skills').style.display = 'block';
+    } else if (category === 'creative') {
+        document.getElementById('skills').style.display = 'none';
+    } else if (category === 'personal') {
+        document.getElementById('skills').style.display = 'none';
+        document.getElementById('projects').style.display = 'none';
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    AOS.refresh();
+}
+
+function showLobby() {
+    document.querySelector('.hero').classList.remove('section-hidden');
+    document.querySelectorAll('.section').forEach(sec => sec.classList.add('section-hidden'));
+    const backBtn = document.getElementById('backToLobby');
+    if (backBtn) backBtn.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function navigateFromSidebar(category, targetId) {
+    filterContent(category);
+    toggleMenu();
+    setTimeout(() => {
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) targetElement.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+}
+
+// Custom Cursor
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+if (!isTouchDevice) {
+    const cursor = document.createElement('div');
+    cursor.style.cssText = `
+        position: fixed; pointer-events: none; z-index: 99999;
+        font-size: 20px; transition: transform 0.1s ease;
+        transform: translate(-50%, -50%);
+    `;
+    cursor.innerHTML = '✿';
+    document.body.appendChild(cursor);
+
+    let lastPetalTime = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+
+        const now = Date.now();
+        if (now - lastPetalTime < 60) return;
+        lastPetalTime = now;
+
+        const petal = document.createElement('div');
+        petal.innerHTML = ['✿', '❀', '✦', '✧', '⁕'][Math.floor(Math.random() * 5)];
+        petal.style.cssText = `
+            position: fixed; pointer-events: none; z-index: 99998;
+            font-size: ${Math.random() * 12 + 8}px;
+            left: ${e.clientX}px; top: ${e.clientY}px;
+            transform: translate(-50%, -50%); transition: all 0.8s ease; opacity: 1;
+        `;
+        document.body.appendChild(petal);
+        setTimeout(() => {
+            petal.style.opacity = '0';
+            petal.style.transform = `translate(${(Math.random()-0.5)*60}px, ${Math.random()*40+20}px) rotate(${Math.random()*360}deg)`;
+        }, 50);
+        setTimeout(() => petal.remove(), 900);
+    });
+
+    document.addEventListener('click', (e) => {
+        for (let i = 0; i < 6; i++) {
+            const burst = document.createElement('div');
+            burst.innerHTML = ['✿', '❀', '✦', '·', '⁕'][Math.floor(Math.random()*5)];
+            burst.style.cssText = `
+                position: fixed; pointer-events: none; z-index: 99998;
+                font-size: 16px; left: ${e.clientX}px; top: ${e.clientY}px;
+                transform: translate(-50%, -50%); transition: all 0.6s ease; opacity: 1;
+            `;
+            document.body.appendChild(burst);
+            const angle = (i / 6) * 360;
+            const distance = Math.random() * 50 + 30;
+            setTimeout(() => {
+                burst.style.opacity = '0';
+                burst.style.left = `${e.clientX + Math.cos(angle) * distance}px`;
+                burst.style.top = `${e.clientY + Math.sin(angle) * distance}px`;
+            }, 50);
+            setTimeout(() => burst.remove(), 700);
+        }
+    });
+
+    document.body.style.cursor = 'none';
+}
+
+// ============================================================
+// THEME SYSTEM v2 — Settings Panel di ikon ⚙️
+// ============================================================
+
+const THEME_LIST = [
+    { key: 'pink',   color: '#e5a4b4', label: 'Pink Rose'     },
+    { key: 'peach',  color: '#e8824a', label: 'Peach'         },
+    { key: 'blue',   color: '#5a9fd4', label: 'Baby Blue'     },
+    { key: 'sage',   color: '#6a9e72', label: 'Sage Green'    },
+    { key: 'lilac',  color: '#9b72cf', label: 'Soft Lilac'    },
+    { key: 'butter', color: '#d4a800', label: 'Butter Yellow' },
+    { key: 'grey',   color: '#888888', label: 'Pale Grey'     },
+    { key: 'mocha',  color: '#a0714f', label: 'Mocha'         },
+];
+
+const THEME_DARK_BG = {
+    pink:   '#2d1b1e', peach:  '#2d1a0e', blue:   '#0e1a2d',
+    sage:   '#0e2010', lilac:  '#1a0e2d', butter: '#2a2000',
+    grey:   '#1a1a1a', mocha:  '#200e00',
+};
+
+const THEME_PARTICLES = {
+    pink:   ['rgba(255,215,60,',  'rgba(255,195,40,',  'rgba(255,235,120,'],
+    peach:  ['rgba(255,160,80,',  'rgba(255,140,60,',  'rgba(255,200,140,'],
+    blue:   ['rgba(120,180,255,', 'rgba(100,160,240,', 'rgba(180,220,255,'],
+    sage:   ['rgba(120,200,130,', 'rgba(100,180,110,', 'rgba(180,230,190,'],
+    lilac:  ['rgba(180,130,255,', 'rgba(160,110,240,', 'rgba(210,180,255,'],
+    butter: ['rgba(255,230,80,',  'rgba(240,210,60,',  'rgba(255,245,160,'],
+    grey:   ['rgba(180,180,180,', 'rgba(160,160,160,', 'rgba(210,210,210,'],
+    mocha:  ['rgba(200,150,100,', 'rgba(180,130,80,',  'rgba(230,190,150,'],
+};
+
+const TIME_MODES = [
+    { name: 'Subuh',   emoji: '🌙', start:  4, end:  6, theme: 'lilac',  dark: true  },
+    { name: 'Pagi',    emoji: '🌅', start:  6, end: 10, theme: 'butter', dark: false },
+    { name: 'Siang',   emoji: '☀️', start: 10, end: 15, theme: 'blue',   dark: false },
+    { name: 'Sore',    emoji: '🌤️', start: 15, end: 18, theme: 'peach',  dark: false },
+    { name: 'Maghrib', emoji: '🌇', start: 18, end: 20, theme: 'mocha',  dark: true  },
+    { name: 'Malam',   emoji: '🌃', start: 20, end: 28, theme: 'grey',   dark: true  },
+];
+
+let activeTheme = localStorage.getItem('theme') || 'pink';
+let autoTime    = localStorage.getItem('autoTime') !== 'off';
+
+function getTimeMode() {
+    const wibHour = (new Date().getUTCHours() + 7) % 24;
+    const h = wibHour < 4 ? wibHour + 24 : wibHour;
+    return TIME_MODES.find(m => h >= m.start && h < m.end) || TIME_MODES[5];
+}
+
+function setTheme(key, save = true) {
+    activeTheme = key;
+    const html = document.documentElement;
+    if (key === 'pink') html.removeAttribute('data-theme');
+    else html.setAttribute('data-theme', key);
+
+    // Update html bg jika dark mode aktif
+    const isDark = document.body.classList.contains('dark-mode');
+    html.style.backgroundColor = isDark ? (THEME_DARK_BG[key] || '#2d1b1e') : '';
+
+    // Update warna partikel
+    const colors = THEME_PARTICLES[key] || THEME_PARTICLES['pink'];
+    if (typeof dandelionParticles !== 'undefined' && dandelionParticles.length > 0) {
+        dandelionParticles.forEach(p => {
+            p.color = colors[Math.floor(Math.random() * colors.length)] +
+                (isDark ? '0.85)' : '0.6)');
+        });
+    }
+
+    if (save) localStorage.setItem('theme', key);
+
+    // Update dot aktif di settings panel
+    document.querySelectorAll('.sp-dot').forEach(d =>
+        d.classList.toggle('active', d.dataset.theme === key)
+    );
+}
+
+function applyAutoTime() {
+    const mode = getTimeMode();
+    setTheme(mode.theme, false);
+
+    // Update waktu di panel
+    const timeLabel = document.getElementById('sp-time-label');
+    if (timeLabel) timeLabel.textContent = mode.emoji + ' ' + mode.name;
+
+    // Dark/light otomatis hanya jika belum ada preferensi manual darkMode
+    if (!localStorage.getItem('darkMode')) {
+        const shouldDark = mode.dark;
+        document.body.classList.toggle('dark-mode', shouldDark);
+        const btn = document.getElementById('darkModeToggle');
+        if (btn) btn.innerText = shouldDark ? '☀️' : '🌙';
+        document.documentElement.style.backgroundColor =
+            shouldDark ? (THEME_DARK_BG[mode.theme] || '#2d1b1e') : '';
+    }
+}
+
+// ── Build Settings Panel ────────────────────────────────────
+function buildSettingsPanel() {
+    // ① Panel overlay (klik luar = tutup)
+    const overlay = document.createElement('div');
+    overlay.id = 'sp-overlay';
+    overlay.addEventListener('click', closeSettingsPanel);
+
+    // ② Panel box
+    const panel = document.createElement('div');
+    panel.id = 'settings-panel';
+    panel.setAttribute('aria-label', 'Pengaturan tampilan');
+    panel.addEventListener('click', e => e.stopPropagation());
+
+    // Waktu sekarang
+    const mode = getTimeMode();
+
+    panel.innerHTML = `
+        <div class="sp-header">
+            <span>⚙️ Pengaturan</span>
+            <button class="sp-close" onclick="closeSettingsPanel()" aria-label="Tutup">✕</button>
+        </div>
+
+        <div class="sp-section">
+            <div class="sp-label">🎨 Tema Warna</div>
+            <div class="sp-dots" id="sp-dots"></div>
+            <div class="sp-theme-name" id="sp-theme-name"></div>
+        </div>
+
+        <div class="sp-section">
+            <div class="sp-label">🕐 Auto Tema Waktu</div>
+            <div class="sp-row">
+                <span id="sp-time-label" style="font-size:13px">${mode.emoji} ${mode.name}</span>
+                <label class="sp-toggle">
+                    <input type="checkbox" id="sp-auto-check" ${autoTime ? 'checked' : ''}>
+                    <span class="sp-slider"></span>
+                </label>
+            </div>
+            <div class="sp-hint" id="sp-auto-hint">${autoTime ? 'Tema & mode ikut waktu WIB' : 'Pilih tema manual di atas'}</div>
+        </div>
+    `;
+
+    // Buat dots
+    const dotsContainer = panel.querySelector('#sp-dots');
+    THEME_LIST.forEach(({ key, color, label }) => {
+        const btn = document.createElement('button');
+        btn.className = 'sp-dot' + (key === activeTheme ? ' active' : '');
+        btn.dataset.theme = key;
+        btn.style.backgroundColor = color;
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        btn.addEventListener('click', () => {
+            autoTime = false;
+            localStorage.setItem('autoTime', 'off');
+            localStorage.setItem('theme', key);
+            setTheme(key);
+            // Update toggle & hint
+            const chk = document.getElementById('sp-auto-check');
+            const hint = document.getElementById('sp-auto-hint');
+            if (chk) chk.checked = false;
+            if (hint) hint.textContent = 'Pilih tema manual di atas';
+            // Update nama tema
+            const nameEl = document.getElementById('sp-theme-name');
+            const t = THEME_LIST.find(t => t.key === key);
+            if (nameEl && t) nameEl.textContent = t.label;
+        });
+        dotsContainer.appendChild(btn);
+    });
+
+    // Set nama tema awal
+    const initName = THEME_LIST.find(t => t.key === activeTheme);
+    const nameEl = panel.querySelector('#sp-theme-name');
+    if (nameEl && initName) nameEl.textContent = initName.label;
+
+    // Toggle auto time
+    const autoCheck = panel.querySelector('#sp-auto-check');
+    autoCheck.addEventListener('change', () => {
+        autoTime = autoCheck.checked;
+        localStorage.setItem('autoTime', autoTime ? 'on' : 'off');
+        const hint = document.getElementById('sp-auto-hint');
+        if (hint) hint.textContent = autoTime ? 'Tema & mode ikut waktu WIB' : 'Pilih tema manual di atas';
+        if (autoTime) applyAutoTime();
+    });
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(panel);
+
+    // ③ Tombol ⚙️ sudah ada di HTML dengan id settingsToggle
+    // onclick="toggleSettingsPanel()" sudah dipasang langsung di HTML
+}
+
+function toggleSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    const overlay = document.getElementById('sp-overlay');
+    if (!panel) return;
+    const open = panel.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open', open);
+}
+
+function closeSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    const overlay = document.getElementById('sp-overlay');
+    if (panel) panel.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
+}
+
+// ── Init ────────────────────────────────────────────────────
+buildSettingsPanel();
+
+if (autoTime) {
+    applyAutoTime();
+} else {
+    setTheme(activeTheme, false);
+}
+
+// Update setiap menit
+setInterval(() => {
+    const timeLabel = document.getElementById('sp-time-label');
+    const mode = getTimeMode();
+    if (timeLabel) timeLabel.textContent = mode.emoji + ' ' + mode.name;
+    if (autoTime) applyAutoTime();
+}, 60000);
+
+// ── URL REF DETECTION ──────────────────────────────────────
+// ?ref=pro      → skip amplop, langsung konten IT + kerja
+// ?ref=creative → amplop tetap, setelah dibuka auto jalur Seni + Umum
+// tanpa ref     → normal seperti biasa
+(function() {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (!ref) return;
+
+    if (ref === 'pro') {
+        // Sembunyikan amplop sepenuhnya
+        const overlay = document.getElementById('envelopeOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        // Izinkan scroll
+        document.body.classList.remove('no-scroll');
+
+        // Tampilkan langsung konten IT
+        // Tunggu DOM siap lalu jalankan filterContent
+        filterContent('pro');
+
+        // Ganti judul halaman dan hero agar terasa profesional
+        document.title = 'Shafira Zahra | IT Professional';
+        const heroDesc = document.getElementById('hero-desc');
+        if (heroDesc) {
+            heroDesc.innerHTML = 'Fresh Graduate D3 Teknik Informatika UDINUS &bull; Front-End Developer &bull; Data Entry &amp; Admin &bull; Akurasi 99% terbukti di lapangan.';
+        }
+
+        // Tambahkan banner "Open to Work" di bawah foto profil
+        const profileImg = document.querySelector('.profile-img-hero');
+        if (profileImg && !document.getElementById('open-to-work-badge')) {
+            const badge = document.createElement('div');
+            badge.id = 'open-to-work-badge';
+            badge.innerHTML = '🟢 Open to Work';
+            badge.style.cssText = [
+                'display:inline-block',
+                'margin-top: -10px',
+                'margin-bottom: 12px',
+                'background: #1D9E75',
+                'color: white',
+                'font-size: 13px',
+                'font-weight: 600',
+                'padding: 5px 16px',
+                'border-radius: 20px',
+                'letter-spacing: 0.03em',
+            ].join(';');
+            profileImg.insertAdjacentElement('afterend', badge);
+        }
+
+        // Tampilkan hero section (tidak disembunyikan seperti biasa)
+        const hero = document.querySelector('.hero');
+        if (hero) {
+            hero.classList.remove('section-hidden');
+            hero.style.display = 'flex';
+        }
+
+        // Sembunyikan tombol gateway — tidak relevan untuk HRD
+        const gatewayContainer = document.querySelector('.gateway-container');
+        if (gatewayContainer) gatewayContainer.style.display = 'none';
+
+        // Tampilkan tombol back to lobby
+        const backBtn = document.getElementById('backToLobby');
+        if (backBtn) backBtn.style.display = 'none';
+
+    } else if (ref === 'creative') {
+        // Amplop tetap tampil, tapi setelah dibuka langsung masuk jalur Creative
+        const originalOpenEnvelope = window.openEnvelope;
+        window.openEnvelope = function() {
+            originalOpenEnvelope();
+            // Setelah animasi amplop selesai, langsung filter ke creative
+            setTimeout(() => {
+                filterContent('creative');
+                // Tampilkan hero sebentar lalu hide
+                const hero = document.querySelector('.hero');
+                if (hero) {
+                    hero.classList.remove('section-hidden');
+                    hero.style.display = 'flex';
+                }
+            }, 2600);
+        };
+    }
+})();
 
